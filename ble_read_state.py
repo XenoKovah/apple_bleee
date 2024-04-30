@@ -99,6 +99,7 @@ verify = False
 #                 '47':'Lock screen',
 #                 '4b':'Home screen',
 #                 '4e':'Outgoing call',
+#                 '4f':'UNKNOWN 1',
 #                 '57':'Lock screen',
 #                 '5a':'Off',
 #                 '5b':'Home screen',
@@ -125,6 +126,7 @@ phone_states = {
     '47': 'Lock screen',
     '4b': 'Home screen',
     '4e': 'Outgoing call',
+    '4f': 'UNKNOWN 1',  #THIS IS ONE PLACE GETTING KEY ERRORS
     '57': 'Lock screen',
     '5a': 'Off',
     '5b': 'Home screen',
@@ -312,9 +314,12 @@ devices_models = {
 
 proximity_dev_models = {
     '0220': 'AirPods',
+    '0f20': 'AirPods Gen 2',
+    '1f20': 'AirPods Gen 3?',
+    '0e20': 'AirPods Pro',
     '0320': 'Powerbeats3',
     '0520': 'BeatsX',
-    '0620': 'Beats Solo3'
+    '0620': 'Beats Solo3',
 }
 
 proximity_colors = {
@@ -367,6 +372,10 @@ siri_dev = {'0002': 'iPhone',
             '0003': 'iPad',
             '0009': 'MacBook',
             '000a': 'Watch',
+            '01a0': 'UnknownDevice 01a0', #THIS IS ONE PLACE GETTING KEY ERRORS
+            '01c8': 'UnknownDevice 01c8',
+            '01f6': 'UnknownDevice 01f6',
+            '02c5': 'UnknownDevice 02c5',
             }
 
 magic_sw_wrist = {
@@ -886,7 +895,12 @@ def parse_airpods(mac, data):
     bat2 = "{:08b}".format(int(result['battery2'], base=16))
     bat_left = int(bat1[:4], 2) * 10
     bat_right = int(bat1[4:], 2) * 10
-    color = '{}'.format(proximity_colors[result['color']])
+    # Xeno: It seems that the latest devices just can have any value in the "color" position.
+    # Xeno: I didn't try to re-analyze the protocol, I just want the key errors to go away
+    try:
+        color = '{}'.format(proximity_colors[result['color']])
+    except:
+        color = f"Unknown 'color' {result['color']}"
     bat_level = 'L:{}% R:{}%'.format(bat_left, bat_right)
     notes = f'{bat_level} {color}'
     if result['utp'] in airpods_states.keys():
@@ -900,7 +914,13 @@ def parse_airpods(mac, data):
         phones[mac]['time'] = int(time.time())
         phones[mac]['notes'] = notes
     else:
-        phones[mac] = {'state': state, 'device': proximity_dev_models[result['model']], 'wifi': '', 'os': '',
+        # Xeno: It seems that the latest devices re-randomize their "model"/proximity_device field
+        # Xeno: I didn't try to re-analyze the protocol, I just want the key errors to go away
+        try:
+            proximity_device = f"{proximity_dev_models[result['model']]}"
+        except:
+            proximity_device = f"UnknownProxDevice {result['model']}"
+        phones[mac] = {'state': state, 'device': proximity_device, 'wifi': '', 'os': '',
                        'phone': '',
                        'time': int(time.time()), 'notes': notes}
         resolved_macs.append(mac)
